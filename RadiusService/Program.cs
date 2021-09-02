@@ -23,11 +23,10 @@ namespace RadiusService
         {
             CallingStationId callingStationId = e.AccessRequest.Attributes.OfType<CallingStationId>().FirstOrDefault();
             string mac = callingStationId?.AsString;
-            string userName = e.AccessRequest.UserName?.String;
-            bool passwordIsValid = e.AccessRequest.ValidatePassword("123");
+            string userName = e.AccessRequest.UserName?.Utf8String;
+            bool passwordIsValid = e.AccessRequest.ValidatePassword("12345678");
 
-            var challenge = new AccessAccept(e.AccessRequest);
-            e.Response = challenge;
+            e.Response = new AccessAccept(e.AccessRequest);
         }
     }
 }

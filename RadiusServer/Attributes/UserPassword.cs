@@ -5,15 +5,10 @@ namespace DanilovSoft.Radius.Attributes
     [RadiusAttribute(AttributeType.User_Password)]
     public class UserPassword : RadiusAttribute
     {
-        /// <summary>
-        /// Зашифрованный пароль длиной от 16 до 128 байт и кратностью 16.
-        /// </summary>
-        public ReadOnlyMemory<byte> String { get; }
-
         public UserPassword(ReadOnlySpan<byte> span) : base(AttributeType.User_Password)
         {
             // От 16 до 128.
-            if(span.Length < 16 || span.Length > 128)
+            if (span.Length < 16 || span.Length > 128)
             {
                 IsValid = false;
                 return;
@@ -29,6 +24,11 @@ namespace DanilovSoft.Radius.Attributes
             String = new ReadOnlyMemory<byte>(span.ToArray());
             IsValid = true;
         }
+
+        /// <summary>
+        /// Зашифрованный пароль длиной от 16 до 128 байт и кратностью 16.
+        /// </summary>
+        public ReadOnlyMemory<byte> String { get; }
 
         public override string ToString()
         {

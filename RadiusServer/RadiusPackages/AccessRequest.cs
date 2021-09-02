@@ -12,47 +12,7 @@ namespace DanilovSoft.Radius
     {
         private static readonly byte[] Empty16Bytes = new byte[16];
 
-        /// <summary>
-        /// Имя пользователя. Этот атрибут должен присутствовать но может быть <see langword="null"/>.
-        /// </summary>
-        public UserName UserName { get; }
-
-        /// <summary>
-        /// Пароль пользователя. Если этот атрибут равен <see langword="null"/> то <see cref="ChapPassword"/> или <see cref="State"/> не равен <see langword="null"/>.
-        /// </summary>
-        public string UserPassword { get; }
-
-        /// <summary>
-        /// Пароль пользователя. Если этот атрибут равен <see langword="null"/> то <see cref="UserPassword"/> или <see cref="State"/> не равен <see langword="null"/>.
-        /// </summary>
-        public ChapPassword ChapPassword { get; }
-
-        /// <summary>
-        /// Если этот атрибут равен <see langword="null"/> то <see cref="UserPassword"/> или <see cref="ChapPassword"/> не равен <see langword="null"/>.
-        /// </summary>
-        public State State { get; }
-
-        /// <summary>
-        /// Если этот атрибут равен <see langword="null"/> то <see cref="NasIdentifier"/> не равен <see langword="null"/>.
-        /// </summary>
-        public NasIpAddress NasIpAddress { get; }
-
-        /// <summary>
-        /// Если этот атрибут равен <see langword="null"/> то <see cref="NasIpAddress"/> не равен <see langword="null"/>.
-        /// </summary>
-        public NasIdentifier NasIdentifier { get; }
-
-        /// <summary>
-        /// Этот атрибут может быть <see langword="null"/>.
-        /// </summary>
-        public NasPort NASPort { get; }
-
-        /// <summary>
-        /// Этот атрибут может быть <see langword="null"/>.
-        /// </summary>
-        public NasPortType NASPortType { get; }
-
-        public AccessRequest(RadiusServer _server, ReadOnlySpan<byte> span, EndPoint endPoint) : base(_server, span, Code.Access_Request, endPoint)
+        public AccessRequest(RadiusServer server, ReadOnlySpan<byte> span, EndPoint endPoint) : base(server, span, Code.Access_Request, endPoint)
         {
             // Если базовый клас не прошел валидацию то нет смысла продолжать.
             if (!IsValid)
@@ -64,14 +24,14 @@ namespace DanilovSoft.Radius
             NasIdentifier = Attributes.OfType<NasIdentifier>().FirstOrDefault();
 
             // MUST contain either a NAS-IP - Address attribute or a NAS-Identifier attribute(or both).
-            if(NasIpAddress == null && NasIdentifier == null)
+            if (NasIpAddress == null && NasIdentifier == null)
             {
                 IsValid = false;
                 return;
             }
 
             var userPassword = Attributes.OfType<UserPassword>().FirstOrDefault();
-            ChapPassword =  Attributes.OfType<ChapPassword>().FirstOrDefault();
+            ChapPassword = Attributes.OfType<ChapPassword>().FirstOrDefault();
             State = Attributes.OfType<State>().FirstOrDefault();
 
             // MUST contain either a User-Password or a CHAP-Password or a State.
@@ -82,7 +42,7 @@ namespace DanilovSoft.Radius
             }
 
             // Недопустимо помещать в пакет оба атрибута User-Password и CHAP-Password.
-            if(userPassword != null && ChapPassword != null)
+            if (userPassword != null && ChapPassword != null)
             {
                 IsValid = false;
                 return;
@@ -96,17 +56,17 @@ namespace DanilovSoft.Radius
             // Декодировать пароль.
             if (userPassword != null)
             {
-                UserPassword = DecodePapPassword(userPassword.String.Span, Authenticator.Span, _server.SharedSecret.Raw);
+                UserPassword = DecodePapPassword(userPassword.String.Span, Authenticator.Span, server.SharedSecret.Raw);
             }
-            else if(ChapPassword != null)
+            else if (ChapPassword != null)
             {
-                bool passIsValid = ValidatePassword("123");
+                //bool passIsValid = ValidatePassword("123");
             }
 
-            MessageAuthenticator messageAuthenticator = Attributes.OfType<MessageAuthenticator>().FirstOrDefault();
+            var messageAuthenticator = Attributes.OfType<MessageAuthenticator>().FirstOrDefault();
             if (messageAuthenticator != null)
             {
-                using (var hmacMd5 = new HMACMD5(_server.SharedSecret.Raw))
+                using (var hmacMd5 = new HMACMD5(server.SharedSecret.Raw))
                 {
                     byte[] buffer = MessageHandler.SharedPool.Rent(span.Length);
                     try
@@ -127,7 +87,7 @@ namespace DanilovSoft.Radius
 
                         hmacMd5.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
                         //hmacMd5.ComputeHash(Array, Offset, Length);
-                        byte[] hash = hmacMd5.Hash;
+                        byte[]? hash = hmacMd5.Hash;
                         if (!messageAuthenticator.String.Span.SequenceEqual(hash))
                         {
                             IsValid = false;
@@ -141,6 +101,40 @@ namespace DanilovSoft.Radius
                 }
             }
         }
+
+        /// <summary>
+        /// Имя пользователя. Этот атрибут должен присутствовать но может быть <see langword="null"/>.
+        /// </summary>
+        public UserName? UserName { get; }
+
+        /// <summary>
+        /// Пароль пользователя. Если этот параметр равен <see langword="null"/> то <see cref="ChapPassword"/> или <see cref="State"/> не равен <see langword="null"/>.
+        /// </summary>
+        public string? UserPassword { get; }
+
+        /// <summary>
+        /// Пароль пользователя. Если этот атрибут равен <see langword="null"/> то <see cref="UserPassword"/> или <see cref="State"/> не равен <see langword="null"/>.
+        /// </summary>
+        public ChapPassword? ChapPassword { get; }
+
+        /// <summary>
+        /// Если этот атрибут равен <see langword="null"/> то <see cref="UserPassword"/> или <see cref="ChapPassword"/> не равен <see langword="null"/>.
+        /// </summary>
+        public State? State { get; }
+
+        /// <summary>
+        /// Если этот атрибут равен <see langword="null"/> то <see cref="NasIdentifier"/> не равен <see langword="null"/>.
+        /// </summary>
+        public NasIpAddress? NasIpAddress { get; }
+
+        /// <summary>
+        /// Если этот атрибут равен <see langword="null"/> то <see cref="NasIpAddress"/> не равен <see langword="null"/>.
+        /// </summary>
+        public NasIdentifier? NasIdentifier { get; }
+
+        public NasPort? NASPort { get; }
+
+        public NasPortType? NASPortType { get; }
 
         /// <summary>
         /// 
@@ -183,12 +177,12 @@ namespace DanilovSoft.Radius
         /// <param name="password"></param>
         /// <param name="chapChallenge"></param>
         /// <returns></returns>
-        private void Hash(byte chapIdent, ReadOnlySpan<byte> password, ReadOnlySpan<byte> chapChallenge, Span<byte> hash)
+        private static void Hash(byte chapIdent, ReadOnlySpan<byte> password, ReadOnlySpan<byte> chapChallenge, Span<byte> hash)
         {
             Span<byte> buf = stackalloc byte[1 + password.Length + chapChallenge.Length];
             buf[0] = chapIdent;
-            password.CopyTo(buf.Slice(1));
-            chapChallenge.CopyTo(buf.Slice(1 + password.Length));
+            password.CopyTo(buf[1..]);
+            chapChallenge.CopyTo(buf[(1 + password.Length)..]);
 
             using (var md5 = MD5.Create())
                 md5.TryComputeHash(buf, hash, out int _);
@@ -201,7 +195,7 @@ namespace DanilovSoft.Radius
         /// <param name="sharedSecret">Shared secret.</param>
         /// <param name="authenticator">"Request Authenticator". Длина 16 байт.</param>
         /// <returns>decrypted password</returns>
-        private string DecodePapPassword(ReadOnlySpan<byte> encryptedPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
+        private static string DecodePapPassword(ReadOnlySpan<byte> encryptedPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
         {
             // Пароль уже проверен на кратность 16.
             // Максимальный размер 128 байт.
@@ -250,7 +244,7 @@ namespace DanilovSoft.Radius
             return decodedPassword;
         }
 
-        private byte[] DecodePapPassword2(ReadOnlySpan<byte> encryptedPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
+        private static byte[] DecodePapPassword2(ReadOnlySpan<byte> encryptedPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
         {
             // Пароль уже проверен на кратность 16.
             // Максимальный размер 128 байт.
@@ -297,13 +291,13 @@ namespace DanilovSoft.Radius
 	 *            shared secret
 	 * @return the byte array containing the encrypted password
 	 */
-        private byte[] EncodePapPassword(byte[] userPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
+        private static byte[] EncodePapPassword(byte[] userPass, ReadOnlySpan<byte> authenticator, byte[] sharedSecret)
         {
             // the password must be a multiple of 16 bytes and less than or equal
             // to 128 bytes. If it isn't a multiple of 16 bytes fill it out with zeroes
             // to make it a multiple of 16 bytes. If it is greater than 128 bytes
             // truncate it at 128.
-            byte[] userPassBytes = null;
+            byte[]? userPassBytes = null;
             if (userPass.Length > 128)
             {
                 userPassBytes = new byte[128];
@@ -315,7 +309,7 @@ namespace DanilovSoft.Radius
             }
 
             // declare the byte array to hold the final product
-            byte[] encryptedPass = null;
+            byte[]? encryptedPass = null;
             if (userPassBytes.Length < 128)
             {
                 if (userPassBytes.Length % 16 == 0)
@@ -361,11 +355,13 @@ namespace DanilovSoft.Radius
                         md5.TransformFinalBlock(encryptedPass, i - 16, 16);
                     }
 
-                    byte[] bn = md5.Hash;
+                    byte[]? bn = md5.Hash;
 
                     // perform the XOR as specified by RFC 2865.
                     for (int j = 0; j < 16; j++)
+                    {
                         encryptedPass[i + j] = (byte)(bn[j] ^ encryptedPass[i + j]);
+                    }
                 }
             }
             return encryptedPass;
