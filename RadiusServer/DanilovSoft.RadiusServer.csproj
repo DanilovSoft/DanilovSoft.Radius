@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="PEN\PRIVATE ENTERPRISE NUMBERS.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="PEN\PRIVATE ENTERPRISE NUMBERS.txt" />
+  </ItemGroup>
+
+</Project>
